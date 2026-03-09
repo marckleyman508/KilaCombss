@@ -298,6 +298,22 @@ async function router(req, res) {
   if (meth==='POST' && p==='/api/orders/full') {
     const body = await readBody(req);
     const {contact,business,cart,discount,subtotal,discount_amount,total,notes,wholesale,training,nutrition,workout,merch} = body;
+async function router(req, res) {
+  const url   = new URL(req.url, `http://localhost:${PORT}`);
+  const p     = url.pathname.replace(/\/$/, '') || '/';
+  const meth  = req.method.toUpperCase();
+
+  if (meth === 'OPTIONS') { res.writeHead(204, CORS); return res.end(); }
+
+  // ADD THIS BLOCK HERE:
+  if (meth==='GET' && p==='/') {
+    return respond(res, { 
+      success: true, 
+      message: 'KilaCombss API is running',
+      service: 'KilaCombss Full-Service API',
+      version: '2.0'
+    });
+  }
 
     if (!contact?.email || !contact?.name || !contact?.phone)
       return respond(res,{success:false,error:'contact.email, name, phone required'},400);
