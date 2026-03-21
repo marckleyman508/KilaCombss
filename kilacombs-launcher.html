@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KilaCombs — Deploy Launcher</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold:#F5A623; --gold-d:#C8840A; --gold-l:#FFD06B;
+  --black:#080808; --dark:#0f0f0f; --mid:#161616; --mid2:#1e1e1e;
+  --white:#F0EBE0; --grey:#666; --green:#22c55e; --red:#ef4444;
+  --border:rgba(245,166,35,.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--black);color:var(--white);font-family:'Barlow',sans-serif;min-height:100vh;background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(245,166,35,.05) 0%,transparent 60%);}
+::-webkit-scrollbar{width:3px;} ::-webkit-scrollbar-thumb{background:var(--gold-d);}
+
+/* HEADER */
+header{padding:36px 48px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;color:var(--gold);letter-spacing:.1em;}
+.logo-sub{font-family:'Barlow',sans-serif;font-size:.6rem;font-weight:500;letter-spacing:.35em;text-transform:uppercase;color:var(--grey);display:block;margin-top:-3px;}
+.live-badge{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:var(--green);font-size:.65rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;padding:6px 14px;font-family:'DM Mono',monospace;}
+
+/* HERO */
+.hero{padding:52px 48px 44px;border-bottom:1px solid var(--border);position:relative;overflow:hidden;}
+.hero::after{content:'DEPLOY';position:absolute;right:-20px;top:50%;transform:translateY(-50%);font-family:'Bebas Neue',sans-serif;font-size:13vw;color:rgba(245,166,35,.022);pointer-events:none;line-height:1;}
+.eyebrow{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--gold);letter-spacing:.22em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.eyebrow::before{content:'';width:20px;height:1px;background:var(--gold);}
+h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,7vw,5.5rem);line-height:.9;margin-bottom:14px;}
+h1 em{color:var(--gold);font-style:normal;}
+.hero-p{font-size:.9rem;font-weight:300;color:rgba(240,235,224,.45);max-width:480px;line-height:1.85;}
+
+/* PLATFORM PICKER */
+.section{padding:40px 48px;}
+.sec-label{font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.3em;text-transform:uppercase;color:var(--grey);margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+.sec-label::before{content:'';width:14px;height:1px;background:var(--grey);}
+.platform-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.pcard{background:var(--mid);border:1px solid rgba(255,255,255,.06);padding:22px 20px;cursor:pointer;transition:border-color .2s,transform .15s;position:relative;overflow:hidden;}
+.pcard:hover{border-color:rgba(245,166,35,.2);transform:translateY(-2px);}
+.pcard.active{border-color:var(--gold);background:rgba(245,166,35,.03);}
+.pcard.active::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold-d),var(--gold-l));}
+.pcard-check{position:absolute;top:12px;right:12px;width:18px;height:18px;border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:.65rem;transition:all .2s;}
+.pcard.active .pcard-check{background:var(--gold);border-color:var(--gold);color:var(--black);}
+.pcard-icon{font-size:1.6rem;margin-bottom:10px;}
+.pcard-name{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;margin-bottom:4px;}
+.pcard-desc{font-size:.7rem;color:var(--grey);font-weight:300;line-height:1.55;margin-bottom:12px;}
+.pill{display:inline-flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.08em;padding:3px 9px;}
+.pill.free{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2);}
+.pill.paid{background:rgba(245,166,35,.08);color:var(--gold);border:1px solid rgba(245,166,35,.2);}
+
+/* PROGRESS */
+.progress-bar{height:2px;background:var(--mid2);}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold-d),var(--gold-l));transition:width .4s ease;width:0%;}
+
+/* STEPS */
+.steps-wrap{padding:0 48px 80px;}
+.steps-container{display:none;}
+.steps-container.visible{display:block;}
+.steps-header{padding:36px 0 28px;border-bottom:1px solid var(--border);margin-bottom:0;display:flex;justify-content:space-between;align-items:flex-end;}
+.steps-h2{font-family:'Bebas Neue',sans-serif;font-size:2rem;}
+.steps-h2 span{color:var(--gold);}
+.steps-counter{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--grey);letter-spacing:.12em;}
+
+.step{display:grid;grid-template-columns:64px 1fr;border-bottom:1px solid var(--border);opacity:.38;transition:opacity .3s;}
+.step.active,.step.done{opacity:1;}
+.step.done{opacity:.65;}
+.step-left{padding:28px 0;display:flex;flex-direction:column;align-items:center;gap:6px;border-right:1px solid var(--border);}
+.step-num{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--gold);line-height:1;}
+.step.done .step-num{color:var(--green);}
+.step-line{flex:1;width:1px;background:var(--border);}
+.step-right{padding:28px 28px 28px 32px;}
+.step-tag{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.26em;text-transform:uppercase;color:var(--grey);margin-bottom:6px;}
+.step-h{font-family:'Bebas Neue',sans-serif;font-size:1.7rem;margin-bottom:10px;line-height:1;}
+.step-p{font-size:.82rem;font-weight:300;color:rgba(240,235,224,.55);line-height:1.8;margin-bottom:16px;max-width:580px;}
+.step-body{display:none;}
+.step.active .step-body{display:block;}
+
+/* STEP CONTENT */
+.code{background:var(--dark);border:1px solid rgba(255,255,255,.07);border-left:3px solid var(--gold);padding:14px 16px;font-family:'DM Mono',monospace;font-size:.76rem;line-height:1.7;color:rgba(240,235,224,.8);margin:10px 0;position:relative;cursor:pointer;transition:border-color .2s;white-space:pre-wrap;word-break:break-all;}
+.code:hover{border-left-color:var(--gold-l);}
+.code .ch{position:absolute;top:8px;right:10px;font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--grey);pointer-events:none;}
+.code.cp{border-left-color:var(--green);}
+.code .hl{color:var(--gold-l);}
+.code .cm{color:var(--grey2,#444);}
+
+.info{background:var(--mid);border:1px solid var(--border);padding:14px 18px;margin:10px 0;font-size:.8rem;color:rgba(240,235,224,.6);line-height:1.8;}
+.info strong{color:var(--white);}
+.info.warn{border-color:rgba(245,166,35,.22);background:rgba(245,166,35,.03);}
+.info.ok{border-color:rgba(34,197,94,.22);background:rgba(34,197,94,.03);color:rgba(34,197,94,.9);}
+.info.tip{border-left:3px solid var(--gold);}
+
+.file-list{display:flex;flex-direction:column;gap:5px;margin:10px 0;}
+.fitem{display:flex;align-items:center;gap:10px;padding:9px 13px;background:var(--dark);border:1px solid rgba(255,255,255,.05);font-family:'DM Mono',monospace;font-size:.72rem;}
+.fitem-name{color:var(--gold-l);flex:1;}
+.fitem-note{font-size:.62rem;color:var(--grey);}
+.fitem-req{font-size:.58rem;color:var(--green);letter-spacing:.1em;text-transform:uppercase;}
+
+table.st{width:100%;border-collapse:collapse;margin:10px 0;}
+table.st td{padding:10px 13px;border-bottom:1px solid rgba(255,255,255,.05);font-size:.8rem;vertical-align:top;}
+table.st td:first-child{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--grey);width:170px;white-space:nowrap;}
+table.st td:last-child{font-family:'DM Mono',monospace;font-size:.75rem;color:var(--gold-l);background:rgba(245,166,35,.03);}
+table.st tr:last-child td{border-bottom:none;}
+
+.actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;align-items:center;}
+.btn{background:var(--gold);color:var(--black);padding:11px 26px;font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:.06em;cursor:pointer;border:none;transition:background .2s,transform .15s;text-decoration:none;display:inline-block;}
+.btn:hover{background:var(--gold-l);transform:translateY(-1px);}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--grey);padding:11px 20px;font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:border-color .2s,color .2s;text-decoration:none;display:inline-block;}
+.btn-outline:hover{border-color:rgba(245,166,35,.3);color:var(--white);}
+.btn-next{background:var(--mid2);border:1px solid var(--border);color:var(--white);padding:11px 22px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.05em;cursor:pointer;transition:border-color .2s,background .2s;}
+.btn-next:hover{border-color:rgba(245,166,35,.3);background:rgba(245,166,35,.05);}
+
+/* SUCCESS */
+.success{display:none;padding:80px 48px;text-align:center;}
+.success.visible{display:block;}
+.s-icon{font-size:4.5rem;margin-bottom:20px;animation:pop .5s ease;}
+@keyframes pop{0%{transform:scale(.4);opacity:0}80%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.s-h{font-family:'Bebas Neue',sans-serif;font-size:3.8rem;color:var(--gold);margin-bottom:10px;}
+.s-p{font-size:.9rem;font-weight:300;color:rgba(240,235,224,.45);margin-bottom:36px;line-height:1.9;max-width:480px;margin-left:auto;margin-right:auto;}
+.url-box{background:var(--mid);border:1px solid var(--border);padding:18px 26px;display:inline-flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .2s;margin-bottom:32px;}
+.url-box:hover{border-color:rgba(245,166,35,.3);}
+.url-text{font-family:'DM Mono',monospace;font-size:.88rem;color:var(--gold);}
+.url-hint{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--grey);margin-top:3px;}
+.s-links{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:48px;}
+.s-link{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;padding:10px 18px;border:1px solid var(--border);color:var(--grey);text-decoration:none;transition:all .2s;}
+.s-link:hover{border-color:rgba(245,166,35,.3);color:var(--white);}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--mid);border-left:3px solid var(--green);padding:11px 16px;font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:.04em;transform:translateX(130%);transition:transform .3s;z-index:999;box-shadow:0 8px 30px rgba(0,0,0,.5);max-width:260px;}
+.toast.show{transform:translateX(0);}
+
+@media(max-width:720px){
+  header,.hero,.section,.steps-wrap,.success{padding-left:20px;padding-right:20px;}
+  .platform-grid{grid-template-columns:1fr;}
+  .step{grid-template-columns:48px 1fr;}
+  .step-right{padding:20px 14px 20px 18px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">KilaCombs <span class="logo-sub">Deploy Launcher</span></div>
+  <div class="live-badge">🍯 Ready to Ship</div>
+</header>
+
+<div class="hero">
+  <p class="eyebrow">Step-by-step deployment</p>
+  <h1>Get <em>Live</em><br>In 10 Min</h1>
+  <p class="hero-p">Pick your platform. Follow the steps. Your full KilaCombs site — training, merch, wholesale, backend — goes live on a real URL.</p>
+</div>
+
+<!-- PLATFORM PICKER -->
+<div class="section">
+  <div class="sec-label">Choose your platform</div>
+  <div class="platform-grid">
+
+    <div class="pcard active" id="pc-render" onclick="setPlatform('render',this)">
+      <div class="pcard-check">✓</div>
+      <div class="pcard-icon">🟣</div>
+      <div class="pcard-name">Render</div>
+      <div class="pcard-desc">Free tier. Deploys from GitHub. Sleeps after 15 min idle on free plan — wakes in ~30 sec.</div>
+      <span class="pill free">● Free tier</span>
+    </div>
+
+    <div class="pcard" id="pc-railway" onclick="setPlatform('railway',this)">
+      <div class="pcard-check"></div>
+      <div class="pcard-icon">🚂</div>
+      <div class="pcard-name">Railway</div>
+      <div class="pcard-desc">$5 free credit/month. Always on. Fastest deploys. Best for real customers.</div>
+      <span class="pill paid">● $5/mo after credit</span>
+    </div>
+
+    <div class="pcard" id="pc-fly" onclick="setPlatform('fly',this)">
+      <div class="pcard-check"></div>
+      <div class="pcard-icon">🪁</div>
+      <div class="pcard-name">Fly.io</div>
+      <div class="pcard-desc">Free tier, always on. Needs a terminal for setup but very reliable once live.</div>
+      <span class="pill free">● Free tier</span>
+    </div>
+
+  </div>
+</div>
+
+<div class="progress-bar"><div class="progress-fill" id="pFill"></div></div>
+
+<!-- STEPS AREA -->
+<div class="steps-wrap">
+
+  <!-- ══ RENDER ══ -->
+  <div class="steps-container visible" id="sc-render">
+    <div class="steps-header">
+      <div><div class="steps-h2">Deploy on <span>Render</span></div><div style="font-size:.78rem;color:var(--grey);margin-top:5px;font-weight:300;">Free · No credit card · ~8 minutes</div></div>
+      <div class="steps-counter" id="ctr-render">0 of 5 done</div>
+    </div>
+
+    <div class="step active" id="render-1">
+      <div class="step-left"><div class="step-num">1</div><div class="step-line"></div></div>
+      <div class="step-right">
+        <div class="step-tag">Prep</div>
+        <div class="step-h">Unzip Your Files</div>
+        <div class="step-p">Download <strong>kilacombs-deploy.zip</strong> and unzip it. You need these files:</div>
+        <div class="step-body">
+          <div class="file-list">
+            <div class="fitem"><span>📄</span><span class="fitem-name">server.js</span><span class="fitem-req">required</span></div>
+            <div class="fitem"><span>📄</span><span class="fitem-name">package.json</span><span class="fitem-req">required</span></div>
+            <div class="fitem"><span>📄</span><span class="fitem-name">render.yaml</span><span class="fitem-req">required</span></div>
+            <div class="fitem"><span>📁</span><span class="fitem-name">public/shop.html</span><span class="fitem-req">required</span></div>
+            <div class="fitem"><span>📄</span><span class="fitem-name">Procfile · railway.toml · .gitignore</span><span class="fitem-note">also include</span></div>
+          </div>
+          <div class="info warn">⚠️ <strong>public/shop.html must be inside a folder named public</strong> — not shop.html by itself at the root.</div>
+          <div class="actions"><button class="btn-next" onclick="done('render',1,5)">✓ Got the files — Next →</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="render-2">
+      <div class="step-left"><div class="step-num">2</div><div class="step-line"></div></div>
+      <div class="step-right">
+        <div class="step-tag">GitHub</div>
+        <div class="step-h">Create a GitHub Repo</div>
+        <div class="step-p">Render pulls your code from GitHub. Takes 2 minutes to set up.</div>
+        <div class="step-body">
+          <div class="actions" style="margin-bottom:14px;"><a class="btn" href="https://github.com/new" target="_blank">Open GitHub → New Repo ↗</a></div>
+          <div class="info tip"><strong>On the new repo page:</strong><br><br>
+            Repository name: <strong>kilacombs</strong><br>
+            Visibility: Public (free)<br>
+            Everything else: leave default<br><br>
+            Click <strong>Create repository</strong>
+          </div>
+          <div class="actions"><button class="btn-next" onclick="done('render',2,5)">✓ Repo created — Next →</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="render-3">
+      <div class="step-left"><div class="step-num">3</div><div class="step-line"></div></div>
+      <div class="step-right">
+        <div class="step-tag">GitHub</div>
+        <div class="step-h">Upload All Files</div>
+        <div class="step-p">On your empty repo page, upload the contents of the kc-final folder.</div>
+        <div class="step-body">
+          <div class="info tip">
+            1. On your repo page click <strong>"uploading an existing file"</strong><br>
+            2. Open the unzipped <strong>kc-final</strong> folder<br>
+            3. Select ALL files + the <strong>public</strong> folder → drag into GitHub<br>
+            4. Scroll down → click <strong>Commit changes</strong>
+          </div>
+          <div class="info warn">⚠️ Upload the <em>contents</em> of kc-final — not the folder itself. After uploading, <strong>server.js</strong> should appear at the root of your repo.</div>
+          <div class="actions"><button class="btn-next" onclick="done('render',3,5)">✓ Files uploaded — Next →</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="render-4">
+      <div class="step-left"><div class="step-num">4</div><div class="step-line"></div></div>
+      <div class="step-right">
+        <div class="step-tag">Render</div>
+        <div class="step-h">Connect &amp; Configure</div>
+        <div class="step-p">Create your free Render account and connect your repo with these exact settings.</div>
+        <div class="step-body">
+          <div class="actions" style="margin-bottom:14px;"><a class="btn" href="https://dashboard.render.com/select-repo?type=web" target="_blank">Open Render → New Web Service ↗</a></div>
+          <div class="info tip">1. Sign up at <strong>render.com</strong> with GitHub<br>2. Click <strong>New + → Web Service</strong><br>3. Click <strong>Connect</strong> next to your kilacombs repo<br>4. Use these exact settings:</div>
+          <table class="st">
+            <tr><td>Name</td><td>kilacombs</td></tr>
+            <tr><td>Runtime</td><td>Node</td></tr>
+            <tr><td>Build Command</td><td>npm install</td></tr>
+            <tr><td>Start Command</td><td>node server.js</td></tr>
+            <tr><td>Instance Type</td><td>Free</td></tr>
+          </table>
+          <div class="actions"><button class="btn-next" onclick="done('render',4,5)">✓ Settings filled in — Next →</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="render-5">
+      <div class="step-left"><div class="step-num">5</div><div class="step-line"></div></div>
+      <div class="step-right">
+        <div class="step-tag">Launch</div>
+        <div class="step-h">Deploy &amp; Verify</div>
+        <div class="step-p">Click Create Web Service and watch the logs. Takes 60–90 seconds.</div>
+        <div class="step-body">
+          <div class="info ok">✅ Success looks like:<br><span style="font-family:'DM Mono',monospace;font-size:.72rem;">Running 'node server.js'<br>KilaCombs Full-Service API 🍯 NYC<br>http://localhost:10000</span></div>
+          <div class="info warn">❌ If you see <strong>SyntaxError: Unexpected end of input</strong> — a file got cut off. Click server.js in your GitHub repo and check it has <strong>504 lines</strong>. If fewer, delete and re-upload it.</div>
+          <div style="margin-top:14px;">
+            <div class="info tip">Test your live URL once it's up:<br><br>
+              <strong>Site:</strong> https://YOUR-APP.onrender.com<br>
+              <strong>API check:</strong> https://YOUR-APP.onrender.com/api/health<br>
+              Should return: <span style="color:var(--green);font-family:'DM Mono',monospace;">{"status":"ok"}</span>
+            </div>
+          </div>
+          <div class="actions"><button class="btn" onclick="showSuccess('render')">🚀 It's Live!</button></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end render -->
+
+  <!-- ══ RAILWAY ══ -->
+  <div class="steps-container" id="sc-railway">
+    <div class="steps-header">
+      <div><div class="steps-h2">Deploy on <span>Railway</span></div><div style="font-size:.78rem;color:var(--grey);margin-top:5px;font-weight:300;">$5 free credit · Always on · ~5 minutes</div></div>
+      <div class="steps-counter" id="ctr-railway">0 of 4 done</div>
+    </div>
+
+    <div class="step active" id="railway-1">
+      <div class="step-left"><div class="step-num">1</div><div class="step-line"></div></div>
+      <div class="step-right">
+        <div class="step-tag">GitHub</div>
+        <div class="step-h">Upload Files to GitHub</div>
+        <div class="step-p">Railway also deploys from GitHub. Create a repo and upload your kc-final files.</div>
+        <div class="step-body">
+          <div class="actions" style="margin-bottom:12px;"><a class="btn" href="https://github.com/new" target="_blank">Create GitHub Repo ↗</a></div>
+          <div class="info tip">1. Name repo <strong>kilacombs</strong> → Create<br>2. Click <strong>"uploading an existing file"</strong><br>3. Upload contents of <strong>kc-final</strong> folder<br>4. Commit changes</div>
+          <div class="actions"><button class="btn-next" onclick="done('railway',1,4)">✓ On GitHub — Next →</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="railway-2">
+      <div class="step-left"><div class="step-num">2</div><div class="step-line"></div></div>
+      <div class="step-right">
+        <div class="step-tag">Railway</div>
+        <div class="step-h">Deploy from GitHub</div>
+        <div class="step-p">Two clicks to get it running on Railway.</div>
+        <div class="step-body">
+          <div class="actions" style="margin-bottom:12px;"><a class="btn" href="https://railway.app/new" target="_blank">Open Railway → New Project ↗</a></div>
+          <div class="info tip">1. Sign up at <strong>railway.app</strong> with GitHub<br>2. Click <strong>Deploy from GitHub repo</strong><br>3. Select your <strong>kilacombs</strong> repo<br>4. Railway detects Node automatically → click <strong>Deploy Now</strong></div>
+          <div class="actions"><button class="btn-next" onclick="done('railway',2,4)">✓ Deploying — Next →</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="railway-3">
+      <div class="step-left"><div class="step-num">3</div><div class="step-line"></div></div>
+      <div class="step-right">
+        <div class="step-tag">Railway</div>
+        <div class="step-h">Generate Your Domain</div>
+        <div class="step-p">Railway doesn't auto-assign a public URL — you generate it in Settings.</div>
+        <div class="step-body">
+          <div class="info tip">1. Click your service in Railway dashboard<br>2. Go to <strong>Settings</strong> tab<br>3. Scroll to <strong>Networking → Public Networking</strong><br>4. Click <strong>Generate Domain</strong><br>5. Your URL: <span style="font-family:'DM Mono',monospace;color:var(--gold);">kilacombs-xxx.up.railway.app</span></div>
+          <div class="actions"><button class="btn-next" onclick="done('railway',3,4)">✓ Got my URL — Next →</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="railway-4">
+      <div class="step-left"><div class="step-num">4</div><div class="step-line"></div></div>
+      <div class="step-right">
+        <div class="step-tag">Launch</div>
+        <div class="step-h">Verify It's Working</div>
+        <div class="step-p">Hit your Railway URL and confirm site + API are both live.</div>
+        <div class="step-body">
+          <div class="info tip"><strong>Site:</strong> https://YOUR-APP.up.railway.app<br><strong>API:</strong> https://YOUR-APP.up.railway.app/api/health → <span style="color:var(--green);font-family:'DM Mono',monospace;">{"status":"ok"}</span></div>
+          <div class="info ok">✅ Site · API · Excel download at /api/excel/download · Admin at /api/admin/stats</div>
+          <div class="actions"><button class="btn" onclick="showSuccess('railway')">🚀 It's Live!</button></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end railway -->
+
+  <!-- ══ FLY ══ -->
+  <div class="steps-container" id="sc-fly">
+    <div class="steps-header">
+      <div><div class="steps-h2">Deploy on <span>Fly.io</span></div><div style="font-size:.78rem;color:var(--grey);margin-top:5px;font-weight:300;">Free tier · Always on · Needs terminal</div></div>
+      <div class="steps-counter" id="ctr-fly">0 of 4 done</div>
+    </div>
+
+    <div class="step active" id="fly-1">
+      <div class="step-left"><div class="step-num">1</div><div class="step-line"></div></div>
+      <div class="step-right">
+        <div class="step-tag">Setup</div>
+        <div class="step-h">Install Fly CLI</div>
+        <div class="step-p">Open Terminal (Mac) or Command Prompt (Windows) and run one command.</div>
+        <div class="step-body">
+          <div class="info tip" style="margin-bottom:8px;"><strong>Mac / Linux:</strong></div>
+          <div class="code" onclick="cp(this)"><span class="ch">copy</span>curl -L https://fly.io/install.sh | sh</div>
+          <div class="info tip" style="margin:10px 0 8px;"><strong>Windows (PowerShell):</strong></div>
+          <div class="code" onclick="cp(this)"><span class="ch">copy</span>powershell -Command "iwr https://fly.io/install.ps1 -useb | iex"</div>
+          <div class="actions"><button class="btn-next" onclick="done('fly',1,4)">✓ CLI installed — Next →</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="fly-2">
+      <div class="step-left"><div class="step-num">2</div><div class="step-line"></div></div>
+      <div class="step-right">
+        <div class="step-tag">Auth</div>
+        <div class="step-h">Create Account &amp; Login</div>
+        <div class="step-p">Sign up for a free Fly.io account directly from the terminal.</div>
+        <div class="step-body">
+          <div class="code" onclick="cp(this)"><span class="ch">copy</span>fly auth signup</div>
+          <div style="font-size:.76rem;color:var(--grey);margin:6px 0 14px;">Already have an account? Run <span style="font-family:'DM Mono',monospace;color:var(--gold);">fly auth login</span> instead.</div>
+          <div class="actions"><button class="btn-next" onclick="done('fly',2,4)">✓ Logged in — Next →</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="fly-3">
+      <div class="step-left"><div class="step-num">3</div><div class="step-line"></div></div>
+      <div class="step-right">
+        <div class="step-tag">Deploy</div>
+        <div class="step-h">Launch Your App</div>
+        <div class="step-p">Navigate to your kc-final folder and run these two commands.</div>
+        <div class="step-body">
+          <div class="code" onclick="cp(this)"><span class="ch">copy</span><span class="cm"># Go to your folder (update path to where you unzipped)</span>
+cd ~/Downloads/kc-final
+
+<span class="cm"># First time setup</span>
+fly launch --name kilacombs --no-deploy
+
+<span class="cm"># Deploy</span>
+fly deploy</div>
+          <div class="info tip" style="margin-top:10px;">When <strong>fly launch</strong> asks questions, press Enter to accept the defaults. It detects Node automatically.</div>
+          <div class="actions"><button class="btn-next" onclick="done('fly',3,4)">✓ Deployed — Next →</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="fly-4">
+      <div class="step-left"><div class="step-num">4</div><div class="step-line"></div></div>
+      <div class="step-right">
+        <div class="step-tag">Launch</div>
+        <div class="step-h">Open &amp; Verify</div>
+        <div class="step-p">Fly gives you a URL like <span style="font-family:'DM Mono',monospace;color:var(--gold);">kilacombs.fly.dev</span>. Open it with one command.</div>
+        <div class="step-body">
+          <div class="code" onclick="cp(this)"><span class="ch">copy</span>fly open</div>
+          <div class="info ok" style="margin-top:10px;">✅ This opens your live site in the browser automatically.</div>
+          <div class="actions"><button class="btn" onclick="showSuccess('fly')">🚀 It's Live!</button></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end fly -->
+
+  <!-- ══ SUCCESS ══ -->
+  <div class="success" id="successScreen">
+    <div class="s-icon">🍯</div>
+    <div class="s-h">KilaCombs Is Live!</div>
+    <p class="s-p">Your full site — training, merch, wholesale, backend — is deployed and taking orders. Every submission saves to your database in real time.</p>
+    <div class="url-box" onclick="copyUrl()">
+      <div>
+        <div class="url-text" id="liveUrl">your-app.onrender.com</div>
+        <div class="url-hint">click to copy URL</div>
+      </div>
+      <span style="font-size:1.1rem;">📋</span>
+    </div>
+    <div class="s-links">
+      <a class="s-link" id="sl-site" href="#" target="_blank">🌐 Open Site</a>
+      <a class="s-link" id="sl-health" href="#" target="_blank">✅ /api/health</a>
+      <a class="s-link" id="sl-excel" href="#" target="_blank">📊 Download Excel</a>
+      <a class="s-link" id="sl-admin" href="#" target="_blank">📈 Admin Stats</a>
+    </div>
+    <button class="btn-outline" onclick="reset()">← Start Over</button>
+  </div>
+
+</div><!-- end steps-wrap -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+let platform = 'render';
+const totals  = { render:5, railway:4, fly:4 };
+const progress = { render:0, railway:0, fly:0 };
+
+// ── Platform select ────────────────────────────────────────────────────────────
+function setPlatform(p, el) {
+  platform = p;
+  document.querySelectorAll('.pcard').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.steps-container').forEach(c => c.classList.remove('visible'));
+  const sc = document.getElementById('sc-'+p);
+  if (sc) sc.classList.add('visible');
+  document.getElementById('successScreen').classList.remove('visible');
+  updateBar();
+  const bar = document.querySelector('.progress-bar');
+  if (bar) bar.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+// ── Mark step done ─────────────────────────────────────────────────────────────
+function done(p, num, total) {
+  const step = document.getElementById(p+'-'+num);
+  if (step) { step.classList.remove('active'); step.classList.add('done'); }
+
+  const next = document.getElementById(p+'-'+(num+1));
+  if (next) {
+    next.classList.add('active');
+    setTimeout(() => next.scrollIntoView({ behavior:'smooth', block:'start' }), 120);
+  }
+
+  progress[p] = num;
+  updateBar();
+
+  const ctr = document.getElementById('ctr-'+p);
+  if (ctr) ctr.textContent = num + ' of ' + total + ' done';
+}
+
+// ── Progress bar ───────────────────────────────────────────────────────────────
+function updateBar() {
+  const fill = document.getElementById('pFill');
+  if (!fill) return;
+  const pct = Math.round((progress[platform] / totals[platform]) * 100);
+  fill.style.width = pct + '%';
+}
+
+// ── Success screen ─────────────────────────────────────────────────────────────
+function showSuccess(p) {
+  const sc = document.getElementById('sc-'+p);
+  if (sc) sc.classList.remove('visible');
+
+  const ss = document.getElementById('successScreen');
+  if (ss) { ss.classList.add('visible'); ss.scrollIntoView({ behavior:'smooth' }); }
+
+  const fill = document.getElementById('pFill');
+  if (fill) fill.style.width = '100%';
+
+  const domains = { render:'your-app.onrender.com', railway:'your-app.up.railway.app', fly:'your-app.fly.dev' };
+  const url = domains[p] || 'your-app.onrender.com';
+
+  const el = document.getElementById('liveUrl');
+  if (el) el.textContent = url;
+
+  const pairs = [
+    ['sl-site',   'https://'+url],
+    ['sl-health', 'https://'+url+'/api/health'],
+    ['sl-excel',  'https://'+url+'/api/excel/download'],
+    ['sl-admin',  'https://'+url+'/api/admin/stats'],
+  ];
+  pairs.forEach(([id, href]) => {
+    const a = document.getElementById(id);
+    if (a) a.href = href;
+  });
+
+  toast('🎉 KilaCombs is live!');
+}
+
+// ── Reset ──────────────────────────────────────────────────────────────────────
+function reset() {
+  ['render','railway','fly'].forEach(p => {
+    progress[p] = 0;
+    let n = 1;
+    while (true) {
+      const s = document.getElementById(p+'-'+n);
+      if (!s) break;
+      s.classList.remove('active','done');
+      if (n === 1) s.classList.add('active');
+      n++;
+    }
+    const ctr = document.getElementById('ctr-'+p);
+    if (ctr) ctr.textContent = '0 of ' + totals[p] + ' done';
+  });
+
+  const ss = document.getElementById('successScreen');
+  if (ss) ss.classList.remove('visible');
+  const sc = document.getElementById('sc-'+platform);
+  if (sc) sc.classList.add('visible');
+  updateBar();
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+// ── Copy code blocks ───────────────────────────────────────────────────────────
+function cp(el) {
+  const hint = el.querySelector('.ch');
+  const text = (el.innerText || el.textContent).replace(hint ? (hint.innerText||hint.textContent) : '', '').trim();
+  navigator.clipboard.writeText(text).then(() => {
+    el.classList.add('cp');
+    toast('Copied!');
+    setTimeout(() => el.classList.remove('cp'), 1800);
+  }).catch(() => toast('Copy failed — select text manually'));
+}
+
+// ── Copy URL ──────────────────────────────────────────────────────────────────
+function copyUrl() {
+  const el = document.getElementById('liveUrl');
+  if (!el) return;
+  navigator.clipboard.writeText('https://' + el.textContent).then(() => toast('URL copied!'));
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────────
+function toast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+</script>
+</body>
+</html>
