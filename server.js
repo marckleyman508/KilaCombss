@@ -37,6 +37,7 @@ function loadDB() {
     orders: [], email_signups: [],
     training_bookings: [], nutrition_orders: [],
     merch_orders: [], workout_plan_orders: [],
+    neurotrack_orders: [],
     discount_codes: []
   };
 }
@@ -48,7 +49,7 @@ function uid(prefix = '') {
 }
 
 let db = loadDB();
-['training_bookings','nutrition_orders','merch_orders','workout_plan_orders']
+['training_bookings','nutrition_orders','merch_orders','workout_plan_orders','neurotrack_orders']
   .forEach(k => { if (!db[k]) db[k] = []; });
 
 db.discount_codes = [
@@ -275,6 +276,7 @@ async function router(req, res) {
       xlsx_installed: !!getXLSX(), xlsx_file: fs.existsSync(XLSX_FILE),
       orders: db.orders.length, signups: db.email_signups.length,
       training: db.training_bookings.length, merch: db.merch_orders.length,
+      neurotrack: db.neurotrack_orders.length,
       timestamp: new Date().toISOString()
     });
   }
@@ -297,7 +299,7 @@ async function router(req, res) {
   // ── POST /api/orders/full — unified cart checkout ────────────────────────────
   if (meth==='POST' && p==='/api/orders/full') {
     const body = await readBody(req);
-    const {contact,business,cart,discount,subtotal,discount_amount,total,notes,wholesale,training,nutrition,workout,merch} = body;
+    const {contact,business,cart,discount,subtotal,discount_amount,total,notes,wholesale,training,nutrition,workout,merch,neurotrack} = body;
 
     if (!contact?.email || !contact?.name || !contact?.phone)
       return respond(res,{success:false,error:'contact.email, name, phone required'},400);
@@ -314,27 +316,30 @@ async function router(req, res) {
       subtotal:subtotal||0, discount_amount:discount_amount||0, total:total||subtotal||0,
       notes:notes||'',
       types: {
-        wholesale:  !!(wholesale?.length),
-        training:   !!(training?.length),
-        nutrition:  !!(nutrition?.length),
-        workout:    !!(workout?.length),
-        merch:      !!(merch?.length),
+        wholesale:   !!(wholesale?.length),
+        training:    !!(training?.length),
+        nutrition:   !!(nutrition?.length),
+        workout:     !!(workout?.length),
+        merch:       !!(merch?.length),
+        neurotrack:  !!(neurotrack?.length),
       }
     };
 
     db.orders.push(newOrder);
-    if (training?.length)  db.training_bookings.push({orderId,contact,items:training,created_at:now});
-    if (nutrition?.length) db.nutrition_orders.push({orderId,contact,items:nutrition,created_at:now});
-    if (merch?.length)     db.merch_orders.push({orderId,contact,items:merch,created_at:now});
-    if (workout?.length)   db.workout_plan_orders.push({orderId,contact,items:workout,created_at:now});
+    if (training?.length)   db.training_bookings.push({orderId,contact,items:training,created_at:now});
+    if (nutrition?.length)  db.nutrition_orders.push({orderId,contact,items:nutrition,created_at:now});
+    if (merch?.length)      db.merch_orders.push({orderId,contact,items:merch,created_at:now});
+    if (workout?.length)    db.workout_plan_orders.push({orderId,contact,items:workout,created_at:now});
+    if (neurotrack?.length) db.neurotrack_orders.push({orderId,contact,items:neurotrack,created_at:now});
     saveDB(db);
 
     // Build notes summary
     const noteLines = [notes||''];
-    if (training?.length)  noteLines.push('Training: '+training.map(t=>t.name).join(', '));
-    if (nutrition?.length) noteLines.push('Nutrition: '+nutrition.map(n=>n.name).join(', '));
-    if (workout?.length)   noteLines.push('Plans: '+workout.map(w=>w.name).join(', '));
-    if (merch?.length)     noteLines.push('Merch: '+merch.map(m=>m.name).join(', '));
+    if (training?.length)   noteLines.push('Training: '+training.map(t=>t.name).join(', '));
+    if (nutrition?.length)  noteLines.push('Nutrition: '+nutrition.map(n=>n.name).join(', '));
+    if (workout?.length)    noteLines.push('Plans: '+workout.map(w=>w.name).join(', '));
+    if (merch?.length)      noteLines.push('Merch: '+merch.map(m=>m.name).join(', '));
+    if (neurotrack?.length) noteLines.push('NeuroTrack: '+neurotrack.map(n=>n.name).join(', '));
     const noteStr = noteLines.filter(Boolean).join(' | ').substring(0,200);
 
     const itemSummary = cart.map(c=>`${c.name}(${c.qty}x$${c.price})`).join(' | ');
@@ -452,6 +457,7 @@ async function router(req, res) {
       revenue:'$'+paid.reduce((s,o)=>s+(o.total||0),0).toFixed(2),
       training:db.training_bookings.length, nutrition:db.nutrition_orders.length,
       merch:db.merch_orders.length, workout:db.workout_plan_orders.length,
+      neurotrack:db.neurotrack_orders.length,
       signups:db.email_signups.length, xlsx:fs.existsSync(XLSX_FILE),
       recent:db.orders.slice(-10).reverse().map(o=>({id:o.id,status:o.status,name:o.contact?.name,total:'$'+(o.total||0).toFixed(2),date:o.created_at,types:o.types}))
     }});
