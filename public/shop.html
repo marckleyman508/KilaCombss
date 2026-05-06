@@ -311,6 +311,29 @@ footer{background:var(--dark);border-top:1px solid rgba(255,255,255,.06);padding
 .footer-bottom{border-top:1px solid rgba(255,255,255,.05);padding-top:24px;display:flex;justify-content:space-between;align-items:center;font-size:.7rem;color:var(--grey);}
 .footer-bottom a{color:var(--grey);text-decoration:none;}
 
+/* ── NEUROTRACK ─────────────────────────────────── */
+#neurotrack{background:linear-gradient(180deg,var(--dark) 0%,#07001a 100%);}
+.nt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin-bottom:36px;}
+.nt-card{background:var(--mid);padding:28px 22px;border-top:2px solid var(--purp);position:relative;overflow:hidden;transition:transform .25s,border-top-color .25s;}
+.nt-card:hover{transform:translateY(-4px);border-top-color:var(--gold-l);}
+.nt-card.nt-featured{border-top-color:var(--gold);}
+.nt-card.nt-featured::after{content:'BEST VALUE';position:absolute;top:16px;right:16px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.55rem;letter-spacing:.2em;background:var(--gold);color:var(--black);padding:3px 8px;}
+.nt-watermark{position:absolute;right:-10px;bottom:-20px;font-family:'Bebas Neue',sans-serif;font-size:6rem;color:rgba(142,68,173,.05);line-height:1;pointer-events:none;}
+.nt-icon{font-size:2.4rem;margin-bottom:16px;}
+.nt-name{font-family:'Bebas Neue',sans-serif;font-size:1.7rem;line-height:1;margin-bottom:6px;}
+.nt-sub{font-size:.76rem;color:var(--grey);font-weight:300;line-height:1.55;margin-bottom:18px;}
+.nt-price{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;color:var(--purp);line-height:1;margin-bottom:4px;}
+.nt-per{font-size:.65rem;color:var(--grey);letter-spacing:.1em;margin-bottom:18px;}
+.nt-list{list-style:none;display:flex;flex-direction:column;gap:7px;margin-bottom:22px;}
+.nt-li{font-size:.74rem;color:rgba(245,240,232,.7);display:flex;align-items:flex-start;gap:8px;line-height:1.4;}
+.nt-li::before{content:'◈';color:var(--purp);flex-shrink:0;font-size:.7rem;}
+.nt-btn{width:100%;background:rgba(142,68,173,.1);border:1px solid rgba(142,68,173,.4);color:#c39bd3;padding:11px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;transition:all .25s;}
+.nt-btn:hover,.nt-btn.nt-sel{background:var(--purp);color:var(--white);border-color:var(--purp);}
+.nt-banner{background:rgba(142,68,173,.06);border:1px solid rgba(142,68,173,.15);padding:16px 24px;display:flex;align-items:center;gap:16px;margin-bottom:32px;}
+.nt-banner-icon{font-size:2rem;flex-shrink:0;}
+.nt-banner-text{font-size:.8rem;color:rgba(245,240,232,.6);line-height:1.65;}
+.nt-banner-text strong{color:var(--purp);}
+
 /* ── RESPONSIVE ─────────────────────────────────── */
 @media(max-width:1100px){
   .training-layout,.ws-layout{grid-template-columns:1fr;}
@@ -318,13 +341,14 @@ footer{background:var(--dark);border-top:1px solid rgba(255,255,255,.06);padding
   .nutrition-grid{grid-template-columns:1fr 1fr;}
   .wp-grid{grid-template-columns:repeat(2,1fr);}
   .merch-grid{grid-template-columns:repeat(2,1fr);}
+  .nt-grid{grid-template-columns:repeat(2,1fr);}
 }
 @media(max-width:700px){
   nav{padding:0 20px;}
   .nav-links .nav-link:not(.nav-cta){display:none;}
   .hero,.section{padding:60px 24px;}
   .admin-bar{padding:7px 20px;}
-  .nutrition-grid,.wp-grid{grid-template-columns:1fr;}
+  .nutrition-grid,.wp-grid,.nt-grid{grid-template-columns:1fr;}
   .merch-grid{grid-template-columns:repeat(2,1fr);}
   .footer-grid{grid-template-columns:1fr 1fr;}
   .hero-stats{flex-direction:column;gap:20px;}
@@ -344,6 +368,7 @@ footer{background:var(--dark);border-top:1px solid rgba(255,255,255,.06);padding
     <a href="#workout" class="nav-link">Plans</a>
     <a href="#merch" class="nav-link">Merch</a>
     <a href="#wholesale" class="nav-link">Wholesale</a>
+    <a href="#neurotrack" class="nav-link">NeuroTrack</a>
     <a href="#order-form" class="nav-link nav-cta">Book Now</a>
   </div>
 </nav>
@@ -501,6 +526,28 @@ footer{background:var(--dark);border-top:1px solid rgba(255,255,255,.06);padding
     <button class="btn-primary" style="font-size:1.1rem;padding:13px 28px;" onclick="addSelectedPlans()">Add Selected Plans to Cart</button>
     <div style="font-size:.76rem;color:var(--grey);">Digital PDF · Instant delivery after checkout</div>
   </div>
+</section>
+
+<div class="sec-div"></div>
+
+<!-- ── NEUROTRACK ──────────────────────────────────────────────────────────── -->
+<section class="section" id="neurotrack">
+  <p class="section-eyebrow">Cognitive Performance</p>
+  <h2 class="section-h2">NeuroTrack <span class="gold">System</span></h2>
+  <p class="section-sub">Brain fuel, cognitive coaching, and performance optimization. Train your mind like you train your body.</p>
+
+  <div class="nt-banner">
+    <div class="nt-banner-icon">🧠</div>
+    <div class="nt-banner-text">
+      <strong>New from KilaCombs</strong> — NeuroTrack bridges physical training with cognitive performance. Honey-based neural fuel + structured brain protocols designed for athletes, entrepreneurs, and high performers in NYC and beyond.
+    </div>
+  </div>
+
+  <div class="nt-grid" id="ntGrid">
+    <!-- rendered by JS -->
+  </div>
+
+  <div style="font-size:.76rem;color:var(--grey);">🚀 Neural Fuel Shots ship within 48 hrs · Digital coaching plans sent via email within 24 hrs · All programs include KilaCombs energy pack samples</div>
 </section>
 
 <div class="sec-div"></div>
@@ -677,6 +724,7 @@ footer{background:var(--dark);border-top:1px solid rgba(255,255,255,.06);padding
         <li><a href="#merch">KilaCombs Merch</a></li>
         <li><a href="#wholesale">Wholesale Orders</a></li>
         <li><a href="#wholesale">Energy Packs</a></li>
+        <li><a href="#neurotrack">NeuroTrack System</a></li>
         <li><a href="#wholesale">Discount Programs</a></li>
       </ul>
     </div>
@@ -692,7 +740,7 @@ footer{background:var(--dark);border-top:1px solid rgba(255,255,255,.06);padding
   </div>
   <div class="footer-bottom">
     <span>© 2024 KilaCombs · All rights reserved · New York City</span>
-    <span>Wholesale · Training · Nutrition · Merch</span>
+    <span>Wholesale · Training · Nutrition · Merch · NeuroTrack</span>
   </div>
 </footer>
 
@@ -757,6 +805,13 @@ const MERCH_ITEMS = [
   {id:'mc_bag',      cat:'Gear',    name:'Gym Duffel Bag',        emoji:'🎒', price:75, badge:'Limited', sizes:['One Size']},
   {id:'mc_socks',    cat:'Accessories',name:'Athletic Socks (3pk)',emoji:'🧦', price:18, badge:'',        sizes:['S/M','L/XL']},
   {id:'mc_wristband',cat:'Accessories',name:'KilaCombs Wristband',emoji:'⌚', price:12, badge:'',        sizes:['One Size']},
+];
+
+const NEUROTRACK_PRODUCTS = [
+  {id:'nt_fuel',  icon:'🧠', name:'Neural Fuel Shot',    sub:'Daily cognitive energy boost',           price:45,  per:'30-PACK · ONE-TIME',      features:["Lion's Mane + Honey matrix","30 single-serve energy shots","Mental clarity & sustained focus","Zero crash formula","KilaCombs performance blend"]},
+  {id:'nt_coach', icon:'⚡', name:'NeuroTrack Session',   sub:'1-on-1 cognitive performance coaching',  price:75,  per:'PER SESSION · LIVE 60 MIN',features:['Full cognitive performance intake','Personalized focus & stress protocol','Reaction time & attention baseline','Recovery mapping session','Action plan + 30-day follow-up notes']},
+  {id:'nt_stack', icon:'🔮', name:'Focus Stack 30-Day',   sub:'Monthly brain optimization program',     price:89,  per:'PER MONTH · SUBSCRIBE',   features:['30-day supplement + habits plan','Daily focus & recovery protocol','Weekly neuro check-in call','Brain nutrition targets','Sleep optimization guide','Supplement stack included'], featured:true},
+  {id:'nt_elite', icon:'👑', name:'Elite Mind Program',   sub:'12-week full cognitive optimization',    price:199, per:'12 WEEKS · FULL ACCESS',   features:['12-week neuro training blueprint','4 live coaching sessions included','Full cognitive baseline assessment','Custom supplement & nutrition stack','Sleep & stress resilience protocol','Performance journal system']},
 ];
 
 const DISC_CODES = {
@@ -928,6 +983,33 @@ function selFlavor(id) {
   event.currentTarget.classList.add('fsel');
 }
 
+// ── RENDER: NeuroTrack ────────────────────────────────────────────────────────
+function renderNeuroTrack() {
+  document.getElementById('ntGrid').innerHTML = NEUROTRACK_PRODUCTS.map(p=>`
+    <div class="nt-card${p.featured?' nt-featured':''}">
+      <div class="nt-watermark">NT</div>
+      <div class="nt-icon">${p.icon}</div>
+      <div class="nt-name">${p.name}</div>
+      <div class="nt-sub">${p.sub}</div>
+      <div class="nt-price">$${p.price}</div>
+      <div class="nt-per">${p.per}</div>
+      <ul class="nt-list">${p.features.map(f=>`<li class="nt-li">${f}</li>`).join('')}</ul>
+      <button class="nt-btn" id="ntbtn-${p.id}" onclick="addNeuroTrack('${p.id}')">Add to Cart</button>
+    </div>
+  `).join('');
+}
+
+function addNeuroTrack(id) {
+  const p = NEUROTRACK_PRODUCTS.find(x=>x.id===id);
+  if(!p) return;
+  addToCart({id:'nt_'+id, name:p.icon+' '+p.name, price:p.price, qty:1,
+    type:'neurotrack', meta:p.per});
+  const btn = document.getElementById('ntbtn-'+id);
+  if(btn){ btn.textContent='✓ Added'; btn.classList.add('nt-sel'); }
+  toast(p.icon+' '+p.name+' added!','ok');
+  setTimeout(()=>{ if(btn){btn.textContent='Add to Cart';btn.classList.remove('nt-sel');} },2000);
+}
+
 // ── CART ENGINE ───────────────────────────────────────────────────────────────
 function addToCart(item) {
   const existing = S.cart.find(c=>c.id===item.id);
@@ -1088,11 +1170,12 @@ async function submitOrder() {
   const biz   = document.getElementById('fBiz').value.trim();
 
   // Group cart items by type for payload
-  const wsItems     = S.cart.filter(c=>c.type==='wholesale');
+  const wsItems       = S.cart.filter(c=>c.type==='wholesale');
   const trainingItems = S.cart.filter(c=>c.type==='training');
-  const nutrItems   = S.cart.filter(c=>c.type==='nutrition');
-  const wpItems     = S.cart.filter(c=>c.type==='workout');
-  const merchItems  = S.cart.filter(c=>c.type==='merch');
+  const nutrItems     = S.cart.filter(c=>c.type==='nutrition');
+  const wpItems       = S.cart.filter(c=>c.type==='workout');
+  const merchItems    = S.cart.filter(c=>c.type==='merch');
+  const ntItems       = S.cart.filter(c=>c.type==='neurotrack');
 
   const payload = {
     contact: { name, email, phone: document.getElementById('fPhone').value.trim() },
@@ -1102,11 +1185,12 @@ async function submitOrder() {
       state: document.getElementById('fState').value.trim(),
     },
     cart: S.cart.map(c=>({id:c.id, name:c.name, price:c.price, qty:c.qty, type:c.type, meta:c.meta})),
-    wholesale: wsItems.map(c=>c.wsData).filter(Boolean),
-    training:  trainingItems.map(c=>({id:c.id, name:c.name})),
-    nutrition: nutrItems.map(c=>({id:c.id, name:c.name})),
-    workout:   wpItems.map(c=>({id:c.id, name:c.name})),
-    merch:     merchItems.map(c=>({id:c.id, name:c.name, price:c.price})),
+    wholesale:   wsItems.map(c=>c.wsData).filter(Boolean),
+    training:    trainingItems.map(c=>({id:c.id, name:c.name})),
+    nutrition:   nutrItems.map(c=>({id:c.id, name:c.name})),
+    workout:     wpItems.map(c=>({id:c.id, name:c.name})),
+    merch:       merchItems.map(c=>({id:c.id, name:c.name, price:c.price})),
+    neurotrack:  ntItems.map(c=>({id:c.id, name:c.name, price:c.price})),
     discount:  S.disc,
     subtotal:  sub,
     discount_amount: disc,
@@ -1139,6 +1223,7 @@ async function submitOrder() {
   if(trainingItems.length) sections.push(`<strong>Training:</strong> ${trainingItems.map(c=>c.name).join(', ')}`);
   if(nutrItems.length)     sections.push(`<strong>Nutrition:</strong> ${nutrItems.map(c=>c.name).join(', ')}`);
   if(wpItems.length)       sections.push(`<strong>Workout Plans:</strong> ${wpItems.map(c=>c.name).join(', ')}`);
+  if(ntItems.length)       sections.push(`<strong>NeuroTrack:</strong> ${ntItems.map(c=>c.name).join(', ')}`);
   if(merchItems.length)    sections.push(`<strong>Merch:</strong> ${merchItems.map(c=>c.name).join(', ')}`);
   if(wsItems.length)       sections.push(`<strong>Wholesale:</strong> ${wsItems.map(c=>c.meta).join(', ')}`);
 
@@ -1208,7 +1293,7 @@ function dlExcel(e) {
 
 // ── NAV ACTIVE ON SCROLL ──────────────────────────────────────────────────────
 const navLinks = document.querySelectorAll('.nav-link:not(.nav-cta)');
-const sections = ['home','training','nutrition','workout','merch','wholesale'];
+const sections = ['home','training','nutrition','workout','neurotrack','merch','wholesale'];
 window.addEventListener('scroll',()=>{
   const y = window.scrollY + 120;
   let current = 'home';
@@ -1219,6 +1304,7 @@ window.addEventListener('scroll',()=>{
 // ── INIT ──────────────────────────────────────────────────────────────────────
 renderPkgs();
 renderWPs();
+renderNeuroTrack();
 renderMerch();
 renderFlavors();
 renderCart();
