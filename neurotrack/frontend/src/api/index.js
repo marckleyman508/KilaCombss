@@ -25,13 +25,18 @@ api.interceptors.response.use(
         setAccessToken(refreshed.data.accessToken);
         original.headers.Authorization = `Bearer ${refreshed.data.accessToken}`;
         return api(original);
-      } catch {
+      } catch (refreshErr) {
         setAccessToken(null);
+        if (refreshErr.response?.status !== 429) {
+          window.location.href = '/login';
+        }
+        return Promise.reject(refreshErr);
+      }
+    } else if (err.response?.status === 401 || err.response?.status === 429) {
+      setAccessToken(null);
+      if (err.response?.status !== 429) {
         window.location.href = '/login';
       }
-    } else if (err.response?.status === 401) {
-      setAccessToken(null);
-      window.location.href = '/login';
     }
     return Promise.reject(err);
   }
