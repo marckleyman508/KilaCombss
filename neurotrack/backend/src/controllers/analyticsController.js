@@ -1,8 +1,11 @@
 const { query } = require('../config/database');
+const { audit } = require('../utils/audit');
+const { patientScope } = require('../utils/accessScope');
 
 // ── OVERVIEW KPIs ─────────────────────────────────────────────────────────────
 async function overview(req, res, next) {
   try {
+    const scope = patientScope(req.user, 'p', 1);
     const [totals, stageBreakdown, recentLogs] = await Promise.all([
       query(`
         SELECT
@@ -12,21 +15,25 @@ async function overview(req, res, next) {
           COUNT(*) FILTER (WHERE disease_stage = 'early')        AS stage_early,
           COUNT(*) FILTER (WHERE disease_stage = 'moderate')     AS stage_moderate,
           COUNT(*) FILTER (WHERE disease_stage = 'advanced')     AS stage_advanced
-        FROM patients WHERE is_active = true
-      `),
+        FROM patients p WHERE p.is_active = true AND ${scope.sql}
+      `, scope.params),
       query(`
         SELECT disease_stage, diagnosis_type, COUNT(*) AS count
-        FROM patients WHERE is_active = true
+        FROM patients p WHERE p.is_active = true AND ${scope.sql}
         GROUP BY disease_stage, diagnosis_type
         ORDER BY diagnosis_type, disease_stage
-      `),
+      `, scope.params),
       query(`
         SELECT COUNT(*) AS logs_this_month
-        FROM progress_logs
-        WHERE log_date >= date_trunc('month', CURRENT_DATE)
-      `),
+        FROM progress_logs pl
+        JOIN patients p ON p.id = pl.patient_id
+        WHERE pl.log_date >= date_trunc('month', CURRENT_DATE)
+          AND p.is_active = true
+          AND ${scope.sql}
+      `, scope.params),
     ]);
 
+    await audit(req, { action: 'VIEW', entityType: 'analytics_overview' });
     res.json({
       kpis: totals.rows[0],
       stageBreakdown: stageBreakdown.rows,
@@ -38,6 +45,7 @@ async function overview(req, res, next) {
 // ── COHORT COMPARISON ─────────────────────────────────────────────────────────
 async function cohortComparison(req, res, next) {
   try {
+    const scope = patientScope(req.user, 'p', 1);
     const result = await query(`
       SELECT
         p.diagnosis_type,
@@ -50,9 +58,12 @@ async function cohortComparison(req, res, next) {
       FROM progress_logs pl
       JOIN patients p ON pl.patient_id = p.id
       WHERE pl.log_date >= NOW() - INTERVAL '12 months'
+        AND p.is_active = true
+        AND ${scope.sql}
       GROUP BY p.diagnosis_type, DATE_TRUNC('month', pl.log_date)
       ORDER BY month, p.diagnosis_type
-    `);
+    `, scope.params);
+    await audit(req, { action: 'VIEW', entityType: 'analytics_cohort_comparison', details: { count: result.rows.length } });
     res.json(result.rows);
   } catch (err) { next(err); }
 }
@@ -60,6 +71,7 @@ async function cohortComparison(req, res, next) {
 // ── TREATMENT EFFECTIVENESS ───────────────────────────────────────────────────
 async function treatmentEffectiveness(req, res, next) {
   try {
+    const scope = patientScope(req.user, 'p', 1);
     const result = await query(`
       SELECT
         t.name AS treatment_name,
@@ -72,13 +84,17 @@ async function treatmentEffectiveness(req, res, next) {
                        ELSE NULL END), 2) AS avg_outcome_score
       FROM treatments t
       JOIN patient_treatments pt ON pt.treatment_id = t.id
+      JOIN patients p ON p.id = pt.patient_id
       JOIN progress_logs pl ON pl.patient_id = pt.patient_id
         AND pl.log_date BETWEEN COALESCE(pt.start_date, '2000-01-01') AND COALESCE(pt.end_date, CURRENT_DATE)
       WHERE t.is_active = true
+        AND p.is_active = true
+        AND ${scope.sql}
       GROUP BY t.id, t.name, t.treatment_type, t.diagnosis_type
       HAVING COUNT(DISTINCT pt.patient_id) > 0
       ORDER BY avg_outcome_score DESC NULLS LAST
-    `);
+    `, scope.params);
+    await audit(req, { action: 'VIEW', entityType: 'analytics_treatment_effectiveness', details: { count: result.rows.length } });
     res.json(result.rows);
   } catch (err) { next(err); }
 }
@@ -87,6 +103,7 @@ async function treatmentEffectiveness(req, res, next) {
 // Rule-based: flags patients with clinically notable patterns
 async function riskFlags(req, res, next) {
   try {
+    const scope = patientScope(req.user, 'p', 1);
     const result = await query(`
       WITH latest_logs AS (
         SELECT DISTINCT ON (patient_id)
@@ -124,6 +141,7 @@ async function riskFlags(req, res, next) {
       LEFT JOIN latest_logs ll ON ll.patient_id = p.id
       LEFT JOIN prev_logs pl2 ON pl2.patient_id = p.id
       WHERE p.is_active = true
+        AND ${scope.sql}
         AND (
           (ll.mmse_score IS NOT NULL AND ll.mmse_score < 10)
           OR (pl2.prev_mmse IS NOT NULL AND ll.mmse_score IS NOT NULL AND (pl2.prev_mmse - ll.mmse_score) >= 3)
@@ -133,7 +151,8 @@ async function riskFlags(req, res, next) {
           OR ll.overall_condition = 'declined'
         )
       ORDER BY p.last_name
-    `);
+    `, scope.params);
+    await audit(req, { action: 'VIEW', entityType: 'analytics_risk_flags', details: { count: result.rows.length } });
     res.json(result.rows);
   } catch (err) { next(err); }
 }
@@ -148,6 +167,7 @@ async function patientProgress(req, res, next) {
        ORDER BY log_date ASC`,
       [req.params.id]
     );
+    await audit(req, { action: 'VIEW', entityType: 'patient_progress_chart', entityId: req.params.id, details: { count: result.rows.length } });
     res.json(result.rows);
   } catch (err) { next(err); }
 }

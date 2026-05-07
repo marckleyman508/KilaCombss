@@ -1,22 +1,36 @@
 import axios from 'axios';
+import { getAccessToken, setAccessToken } from './tokenStore';
 
 const api = axios.create({
   baseURL: '/api',
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('nt_token');
+  const token = getAccessToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
 api.interceptors.response.use(
   (res) => res,
-  (err) => {
-    if (err.response?.status === 401) {
-      localStorage.removeItem('nt_token');
-      localStorage.removeItem('nt_user');
+  async (err) => {
+    const original = err.config;
+    const isAuthEndpoint = original?.url?.startsWith('/auth/');
+    if (err.response?.status === 401 && original && !original._retry && !isAuthEndpoint) {
+      original._retry = true;
+      try {
+        const refreshed = await axios.post('/api/auth/refresh', {}, { withCredentials: true });
+        setAccessToken(refreshed.data.accessToken);
+        original.headers.Authorization = `Bearer ${refreshed.data.accessToken}`;
+        return api(original);
+      } catch {
+        setAccessToken(null);
+        window.location.href = '/login';
+      }
+    } else if (err.response?.status === 401) {
+      setAccessToken(null);
       window.location.href = '/login';
     }
     return Promise.reject(err);
@@ -25,6 +39,8 @@ api.interceptors.response.use(
 
 export const authApi = {
   login: (email, password) => api.post('/auth/login', { email, password }),
+  refresh: () => api.post('/auth/refresh'),
+  logout: () => api.post('/auth/logout'),
   me: () => api.get('/auth/me'),
 };
 
@@ -66,6 +82,15 @@ export const treatmentApi = {
 
 export const searchApi = {
   search: (q) => api.get('/search', { params: { q } }),
+};
+
+export const aiApi = {
+  cohortInsights:       ()             => api.get('/ai/cohort-insights'),
+  trends:               (id, weeks)    => api.get(`/ai/patients/${id}/trends`, { params: { weeks } }),
+  anomalies:            (id)           => api.get(`/ai/patients/${id}/anomalies`),
+  summary:              (id)           => api.get(`/ai/patients/${id}/summary`),
+  rehabEffectiveness:   (id)           => api.get(`/ai/patients/${id}/rehab-effectiveness`),
+  researchMatch:        (id)           => api.get(`/ai/patients/${id}/research-match`),
 };
 
 export default api;

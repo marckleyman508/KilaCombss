@@ -1,4 +1,6 @@
 const { query } = require('../config/database');
+const { audit } = require('../utils/audit');
+const { patientScope } = require('../utils/accessScope');
 
 // ── LIST ────────────────────────────────────────────────────────────────────
 async function listPatients(req, res, next) {
@@ -7,12 +9,11 @@ async function listPatients(req, res, next) {
     const offset = (page - 1) * limit;
     const conditions = ['p.is_active = true'];
     const params = [];
-    let i = 1;
+    const scope = patientScope(req.user, 'p', 1);
+    conditions.push(scope.sql);
+    params.push(...scope.params);
+    let i = scope.nextIndex;
 
-    if (req.user.role === 'doctor') {
-      conditions.push(`p.primary_doctor_id = $${i++}`);
-      params.push(req.user.id);
-    }
     if (diagnosis) { conditions.push(`p.diagnosis_type = $${i++}`); params.push(diagnosis); }
     if (stage)     { conditions.push(`p.disease_stage = $${i++}`);   params.push(stage); }
     if (search) {
@@ -38,6 +39,12 @@ async function listPatients(req, res, next) {
        LIMIT $${i} OFFSET $${i + 1}`,
       [...params, limit, offset]
     );
+
+    await audit(req, {
+      action: 'VIEW',
+      entityType: 'patient_list',
+      details: { count: result.rows.length, filters: { diagnosis, stage, hasSearch: Boolean(search) } },
+    });
 
     res.json({
       data: result.rows,
@@ -75,6 +82,8 @@ async function getPatient(req, res, next) {
 
     if (!patientRes.rows.length) return res.status(404).json({ error: 'Patient not found' });
 
+    await audit(req, { action: 'VIEW', entityType: 'patient', entityId: id });
+
     res.json({
       ...patientRes.rows[0],
       medicalHistory: historyRes.rows,
@@ -94,6 +103,10 @@ async function createPatient(req, res, next) {
       diagnosisType, diagnosisDate, diseaseStage,
     } = req.body;
 
+    const assignedDoctorId = req.user.role === 'admin'
+      ? (primaryDoctorId || req.user.id)
+      : req.user.id;
+
     const result = await query(
       `INSERT INTO patients (mrn, first_name, last_name, date_of_birth, gender, email, phone,
          address, emergency_contact_name, emergency_contact_phone, primary_doctor_id,
@@ -101,7 +114,7 @@ async function createPatient(req, res, next) {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
        RETURNING *`,
       [mrn, firstName, lastName, dateOfBirth, gender, email, phone, address,
-       emergencyContactName, emergencyContactPhone, primaryDoctorId,
+       emergencyContactName, emergencyContactPhone, assignedDoctorId,
        diagnosisType, diagnosisDate, diseaseStage]
     );
 
@@ -114,6 +127,7 @@ async function createPatient(req, res, next) {
        req.user.id]
     );
 
+    await audit(req, { action: 'CREATE', entityType: 'patient', entityId: result.rows[0].id });
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -127,6 +141,9 @@ async function updatePatient(req, res, next) {
       emergencyContactName, emergencyContactPhone, primaryDoctorId,
       diagnosisDate, diseaseStage,
     } = req.body;
+
+    const canReassign = req.user.role === 'admin';
+    const nextPrimaryDoctorId = canReassign ? primaryDoctorId : undefined;
 
     const result = await query(
       `UPDATE patients SET
@@ -144,11 +161,17 @@ async function updatePatient(req, res, next) {
          disease_stage = COALESCE($12, disease_stage)
        WHERE id = $13 RETURNING *`,
       [firstName, lastName, dateOfBirth, gender, email, phone, address,
-       emergencyContactName, emergencyContactPhone, primaryDoctorId,
+       emergencyContactName, emergencyContactPhone, nextPrimaryDoctorId,
        diagnosisDate, diseaseStage, id]
     );
 
     if (!result.rows.length) return res.status(404).json({ error: 'Patient not found' });
+    await audit(req, {
+      action: 'UPDATE',
+      entityType: 'patient',
+      entityId: id,
+      details: { attemptedPrimaryDoctorChange: Boolean(primaryDoctorId), primaryDoctorChanged: canReassign && Boolean(primaryDoctorId) },
+    });
     res.json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -161,6 +184,7 @@ async function getTimeline(req, res, next) {
        ORDER BY event_date DESC, created_at DESC`,
       [req.params.id]
     );
+    await audit(req, { action: 'VIEW', entityType: 'patient_timeline', entityId: req.params.id, details: { count: result.rows.length } });
     res.json(result.rows);
   } catch (err) { next(err); }
 }
@@ -176,6 +200,7 @@ async function getProgressLogs(req, res, next) {
        ORDER BY pl.log_date ASC`,
       [req.params.id]
     );
+    await audit(req, { action: 'VIEW', entityType: 'patient_progress', entityId: req.params.id, details: { count: result.rows.length } });
     res.json(result.rows);
   } catch (err) { next(err); }
 }
@@ -210,6 +235,7 @@ async function addProgressLog(req, res, next) {
        result.rows[0].id, req.user.id]
     );
 
+    await audit(req, { action: 'CREATE', entityType: 'progress_log', entityId: result.rows[0].id, details: { patientId: req.params.id } });
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -228,6 +254,7 @@ async function addMedication(req, res, next) {
        VALUES ($1, 'medication_start', $2, $3, 'medication', $4, $5)`,
       [req.params.id, startDate || new Date(), `Started ${medicationName}`, result.rows[0].id, req.user.id]
     );
+    await audit(req, { action: 'CREATE', entityType: 'medication', entityId: result.rows[0].id, details: { patientId: req.params.id } });
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -244,6 +271,7 @@ async function updateMedication(req, res, next) {
       [isCurrent, endDate, notes, req.params.medId, req.params.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Medication not found' });
+    await audit(req, { action: 'UPDATE', entityType: 'medication', entityId: req.params.medId, details: { patientId: req.params.id } });
     res.json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -262,6 +290,7 @@ async function addSurgery(req, res, next) {
        VALUES ($1, 'surgery', $2, $3, 'surgery', $4, $5)`,
       [req.params.id, procedureDate, procedureName, result.rows[0].id, req.user.id]
     );
+    await audit(req, { action: 'CREATE', entityType: 'surgery', entityId: result.rows[0].id, details: { patientId: req.params.id } });
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
 }

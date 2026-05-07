@@ -1,13 +1,31 @@
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
+const { audit } = require('../utils/audit');
+const { clearCookieOptions, cookieOptions, createSession, rotateSession, revokeSession } = require('../utils/security');
+
+function parseCookies(req) {
+  return (req.headers.cookie || '').split(';').reduce((acc, part) => {
+    const [rawKey, ...rawValue] = part.trim().split('=');
+    if (!rawKey) return acc;
+    acc[rawKey] = decodeURIComponent(rawValue.join('='));
+    return acc;
+  }, {});
+}
+
+function publicUser(user) {
+  return {
+    id: user.id,
+    email: user.email,
+    firstName: user.first_name || user.firstName,
+    lastName: user.last_name || user.lastName,
+    role: user.role,
+    specialty: user.specialty,
+  };
+}
 
 async function login(req, res, next) {
   try {
     const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
-    }
 
     const result = await query(
       'SELECT id, email, password_hash, first_name, last_name, role, specialty FROM users WHERE email = $1 AND is_active = true',
@@ -15,32 +33,52 @@ async function login(req, res, next) {
     );
 
     if (!result.rows.length) {
+      await audit(req, { action: 'LOGIN_FAILED', entityType: 'auth', outcome: 'denied', details: { email } });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const user = result.rows[0];
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
+      await audit(req, { action: 'LOGIN_FAILED', entityType: 'auth', entityId: user.id, outcome: 'denied' });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
-    );
+    const session = await createSession(user, req);
+    res.cookie('nt_refresh', session.refreshToken, cookieOptions());
+    req.user = { id: user.id, role: user.role, sid: session.sessionId };
+    await audit(req, { action: 'LOGIN_SUCCESS', entityType: 'auth', entityId: user.id });
 
     res.json({
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        role: user.role,
-        specialty: user.specialty,
-      },
+      accessToken: session.accessToken,
+      user: publicUser(user),
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function refresh(req, res, next) {
+  try {
+    const refreshToken = parseCookies(req).nt_refresh;
+    const rotated = await rotateSession(refreshToken, req);
+    if (!rotated) return res.status(401).json({ error: 'Invalid or expired session' });
+
+    res.cookie('nt_refresh', rotated.refreshToken, cookieOptions());
+    req.user = { id: rotated.user.id, role: rotated.user.role };
+    await audit(req, { action: 'TOKEN_REFRESH', entityType: 'auth', entityId: rotated.user.id });
+    res.json({ accessToken: rotated.accessToken, user: rotated.user });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function logout(req, res, next) {
+  try {
+    await revokeSession(req.user?.sid, 'logout');
+    await audit(req, { action: 'LOGOUT', entityType: 'auth', entityId: req.user?.id || null });
+    res.clearCookie('nt_refresh', clearCookieOptions());
+    res.status(204).end();
   } catch (err) {
     next(err);
   }
@@ -69,4 +107,4 @@ async function me(req, res, next) {
   }
 }
 
-module.exports = { login, me };
+module.exports = { login, logout, me, refresh };

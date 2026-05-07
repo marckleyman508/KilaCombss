@@ -1,4 +1,5 @@
 const { query } = require('../config/database');
+const { audit } = require('../utils/audit');
 
 async function listPapers(req, res, next) {
   try {
@@ -29,6 +30,11 @@ async function listPapers(req, res, next) {
       ),
     ]);
 
+    await audit(req, {
+      action: 'VIEW',
+      entityType: 'research_list',
+      details: { count: result.rows.length, filters: { diagnosis, tag, hasSearch: Boolean(search) } },
+    });
     res.json({
       data: result.rows,
       total: parseInt(countResult.rows[0].count),
@@ -51,6 +57,7 @@ async function getPaper(req, res, next) {
       ),
     ]);
     if (!paperRes.rows.length) return res.status(404).json({ error: 'Paper not found' });
+    await audit(req, { action: 'VIEW', entityType: 'research_paper', entityId: req.params.id });
     res.json({ ...paperRes.rows[0], treatmentLinks: linksRes.rows });
   } catch (err) { next(err); }
 }
@@ -71,6 +78,7 @@ async function createPaper(req, res, next) {
        tags || [], diagnosisRelevance || [], externalUrl, summary,
        req.user.id, externalSource || 'manual', externalId]
     );
+    await audit(req, { action: 'CREATE', entityType: 'research_paper', entityId: result.rows[0].id });
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -89,6 +97,7 @@ async function updatePaper(req, res, next) {
       [title, summary, tags, diagnosisRelevance, externalUrl, req.params.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Paper not found' });
+    await audit(req, { action: 'UPDATE', entityType: 'research_paper', entityId: req.params.id });
     res.json(result.rows[0]);
   } catch (err) { next(err); }
 }
@@ -97,6 +106,7 @@ async function deletePaper(req, res, next) {
   try {
     const result = await query('DELETE FROM research_papers WHERE id = $1 RETURNING id', [req.params.id]);
     if (!result.rows.length) return res.status(404).json({ error: 'Paper not found' });
+    await audit(req, { action: 'DELETE', entityType: 'research_paper', entityId: req.params.id });
     res.status(204).end();
   } catch (err) { next(err); }
 }
@@ -111,6 +121,12 @@ async function linkToTreatment(req, res, next) {
        RETURNING *`,
       [treatmentId, req.params.id, relevanceNotes, req.user.id]
     );
+    await audit(req, {
+      action: 'CREATE',
+      entityType: 'treatment_research_link',
+      entityId: result.rows[0].id,
+      details: { paperId: req.params.id, treatmentId },
+    });
     res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
 }

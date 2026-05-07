@@ -2,10 +2,22 @@
 -- Passwords are bcrypt hash of 'Password123!'
 
 INSERT INTO users (id, email, password_hash, first_name, last_name, role, specialty, license_number) VALUES
-  ('a1000000-0000-0000-0000-000000000001', 'admin@neurotrack.dev',  '$2b$10$rIC2L8o6Qa3kfBkHPRFx3.TlXj6JvBhEpDfUaWLkimCMBjhZhGJoi', 'Sarah',   'Okonkwo',  'admin',  NULL,                  NULL),
-  ('a1000000-0000-0000-0000-000000000002', 'drchen@neurotrack.dev', '$2b$10$rIC2L8o6Qa3kfBkHPRFx3.TlXj6JvBhEpDfUaWLkimCMBjhZhGJoi', 'Michael', 'Chen',     'doctor', 'Neurology',           'NL-2021-0042'),
-  ('a1000000-0000-0000-0000-000000000003', 'drpatel@neurotrack.dev','$2b$10$rIC2L8o6Qa3kfBkHPRFx3.TlXj6JvBhEpDfUaWLkimCMBjhZhGJoi', 'Priya',   'Patel',    'doctor', 'Geriatric Psychiatry', 'GP-2019-0187'),
-  ('a1000000-0000-0000-0000-000000000004', 'drgomez@neurotrack.dev','$2b$10$rIC2L8o6Qa3kfBkHPRFx3.TlXj6JvBhEpDfUaWLkimCMBjhZhGJoi', 'Carlos',  'Gomez',    'doctor', 'Movement Disorders',  'MD-2020-0311');
+  ('a1000000-0000-0000-0000-000000000001', 'admin@neurotrack.dev',  '$2b$10$v5rXVj5souNbrdfly.JjVOjPyViGme2Ms7t3wjsNbtCCrl/pmkV9m', 'Sarah',   'Okonkwo',  'admin',  NULL,                  NULL),
+  ('a1000000-0000-0000-0000-000000000002', 'drchen@neurotrack.dev', '$2b$10$v5rXVj5souNbrdfly.JjVOjPyViGme2Ms7t3wjsNbtCCrl/pmkV9m', 'Michael', 'Chen',     'doctor', 'Neurology',           'NL-2021-0042'),
+  ('a1000000-0000-0000-0000-000000000003', 'drpatel@neurotrack.dev','$2b$10$v5rXVj5souNbrdfly.JjVOjPyViGme2Ms7t3wjsNbtCCrl/pmkV9m', 'Priya',   'Patel',    'doctor', 'Geriatric Psychiatry', 'GP-2019-0187'),
+  ('a1000000-0000-0000-0000-000000000004', 'drgomez@neurotrack.dev','$2b$10$v5rXVj5souNbrdfly.JjVOjPyViGme2Ms7t3wjsNbtCCrl/pmkV9m', 'Carlos',  'Gomez',    'doctor', 'Movement Disorders',  'MD-2020-0311');
+
+INSERT INTO roles (name, description) VALUES
+  ('admin', 'Platform administrator with break-glass oversight privileges'),
+  ('doctor', 'Clinician with access to assigned patient records'),
+  ('caregiver', 'Approved caregiver with explicitly granted patient access'),
+  ('patient', 'Patient with access only to their own record');
+
+INSERT INTO user_roles (user_id, role_name, granted_by) VALUES
+  ('a1000000-0000-0000-0000-000000000001', 'admin',  'a1000000-0000-0000-0000-000000000001'),
+  ('a1000000-0000-0000-0000-000000000002', 'doctor', 'a1000000-0000-0000-0000-000000000001'),
+  ('a1000000-0000-0000-0000-000000000003', 'doctor', 'a1000000-0000-0000-0000-000000000001'),
+  ('a1000000-0000-0000-0000-000000000004', 'doctor', 'a1000000-0000-0000-0000-000000000001');
 
 INSERT INTO patients (id, mrn, first_name, last_name, date_of_birth, gender, email, phone,
   primary_doctor_id, diagnosis_type, diagnosis_date, disease_stage) VALUES

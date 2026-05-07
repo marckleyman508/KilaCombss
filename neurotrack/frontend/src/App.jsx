@@ -8,6 +8,7 @@ import Patients     from './pages/Patients';
 import PatientDetail from './pages/PatientDetail';
 import Analytics    from './pages/Analytics';
 import Research     from './pages/Research';
+import AIInsights   from './pages/AIInsights';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="/patients/:id"      element={<PrivateRoute><PatientDetail /></PrivateRoute>} />
           <Route path="/analytics"         element={<PrivateRoute><Analytics /></PrivateRoute>} />
           <Route path="/research"          element={<PrivateRoute><Research /></PrivateRoute>} />
+          <Route path="/ai-insights"       element={<PrivateRoute><AIInsights /></PrivateRoute>} />
 
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

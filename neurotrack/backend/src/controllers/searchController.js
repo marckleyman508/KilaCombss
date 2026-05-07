@@ -1,20 +1,22 @@
 const { query } = require('../config/database');
+const { audit } = require('../utils/audit');
+const { patientScope } = require('../utils/accessScope');
 
 async function globalSearch(req, res, next) {
   try {
     const { q } = req.query;
-    if (!q || q.trim().length < 2) {
-      return res.status(400).json({ error: 'Search query must be at least 2 characters' });
-    }
     const term = `%${q.trim()}%`;
+    const scope = patientScope(req.user, 'p', 2);
 
     const [patients, papers, treatments] = await Promise.all([
       query(
         `SELECT id, mrn, first_name, last_name, diagnosis_type, disease_stage
-         FROM patients
-         WHERE is_active = true AND (first_name ILIKE $1 OR last_name ILIKE $1 OR mrn ILIKE $1)
+         FROM patients p
+         WHERE p.is_active = true
+           AND ${scope.sql}
+           AND (p.first_name ILIKE $1 OR p.last_name ILIKE $1 OR p.mrn ILIKE $1)
          LIMIT 10`,
-        [term]
+        [term, ...scope.params]
       ),
       query(
         `SELECT id, title, publication_year, journal, diagnosis_relevance
@@ -31,6 +33,16 @@ async function globalSearch(req, res, next) {
         [term]
       ),
     ]);
+
+    await audit(req, {
+      action: 'SEARCH',
+      entityType: 'global_search',
+      details: {
+        patientResultCount: patients.rows.length,
+        researchResultCount: papers.rows.length,
+        treatmentResultCount: treatments.rows.length,
+      },
+    });
 
     res.json({
       patients: patients.rows,
